@@ -3,7 +3,9 @@ Streaming [DEFLATE](http://tools.ietf.org/html/rfc1951) (RFC 1951), [ZLIB](http:
 (RFC 1950) and [GZIP](http://tools.ietf.org/html/rfc1952) (RFC 1952) compression and expansion for
 [node.js](http://nodejs.org/).
 
-Implemented as a C++ wrapper around **[zlib](http://zlib.net)** ![zlib](http://swik.net/swikIcons/img-144-96x96.png)
+![zlib](http://i56.tinypic.com/i5ynol.png) 
+
+uses native [zlib](http://zlib.net).
 
 ## Install
 
