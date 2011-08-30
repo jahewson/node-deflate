@@ -1,0 +1,4 @@
+build/
+test/temp*
+*.node
+.lock-wscript

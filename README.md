@@ -23,12 +23,6 @@ You'll need to start with:
 
     var deflate = require('deflate');
 
-### String
-
-Deflate a `String`, returning a `Buffer`:
-
-	var gzip = deflate.deflate('some text which needs to be compressed');
-
 ### Buffer
 
 Deflate a `Buffer` which contains all data to be compressed:
@@ -64,28 +58,42 @@ the low-level API. All low-level functions are synchronous.
 ## Options
 
 ### deflate(level=6)
-Use `gzip` format. `level` sets the compression level from `0` (uncompressed) to `9` (highly compressed), 
+Deflates a gzip formatted `Buffer`. `level` sets the compression level from `0` (uncompressed) to `9` (highly compressed), 
 a smaller number is faster.
 
 ### deflate(format='gzip', level=6)
-`format` specifies the format and can be `gzip`, `zlib`, or `deflate`.
+Deflates a buffer.
+
+`format` can be `gzip`, `zlib`, or `deflate`.
 
 `level` sets the compression level from `0` (uncompressed) to `9` (highly compressed), 
 a smaller number is faster.
 
----
+### createDeflateStream(readStream, level=6)
+Creates a `Stream` which wraps `readStream` to deflates gzip content.
 
-### createDeflateStream(level=6)
-Use `gzip` format. `level` sets the compression level from `0` (uncompressed) to `9`, a smaller number is faster.
+`level` sets the compression level from `0` (uncompressed) to `9`, a smaller number is faster.
 
-### createDeflateStream(format='gzip', level=6, bufferSize=131072)
-`format` specifies the format and can be `gzip`, `zlib`, or `deflate`.
+### createDeflateStream(readStream, format='gzip', level=6, bufferSize=131072)
+Creates a `Stream` which wraps `readStream` to deflate its content.
+
+`format` can be `gzip`, `zlib`, or `deflate`.
 
 `level` sets the compression level from `0` (uncompressed) to `9` (highly compressed), 
 a smaller number is faster.
 
 `bufferSize` is the size of the output buffer in bytes. Output data is buffered until it reaches
 this size, with the exception of the final chunk. The default is 128K.
+
+### inflate(buffer, format='gzip')
+Inflates a `Buffer`.
+
+`format` can be `gzip`, `zlib`, or `deflate`.
+
+### createInflateStream(readStream, format='gzip')
+Creates a `Stream` which wraps `readStream` to inflate its content.
+
+`format` can be `gzip`, `zlib`, or `deflate`.
 
 ## Tests
 Tests require [nodeunit](https://github.com/caolan/nodeunit), you can run them all with:
