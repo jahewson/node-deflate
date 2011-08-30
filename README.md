@@ -23,17 +23,17 @@ You'll need to start with:
 
     var deflate = require('deflate');
 
-### Buffer
+### Buffer (Quick and Dirty)
 
-Deflate a `Buffer` which contains all data to be compressed:
+Synchronously deflate a `Buffer` which contains all data to be compressed:
 
 	var gzip = deflate.deflate(fs.ReadFileSync('example.txt'));
 	
-Inflate a `Buffer` which contains all compressed data:
+Synchronously inflate a `Buffer` which contains all compressed data:
 
 	var data = deflate.inflate(fs.ReadFileSync('example.gz'));
 
-### Stream
+### Stream (Awesome)
 
 Any `ReadableStream` can be wrapped with a `DeflateStream`, which we can `pipe` into a `WritableStream`.
 
@@ -47,14 +47,20 @@ Any `ReadableStream` can be wrapped with a `DeflateStream`, which we can `pipe` 
 	
 Any `ReadableStream` can be wrapped with an `InflateStream`, which we can `pipe` into a `WritableStream`.
 
-	...
+	// wrap input stream with inflate
+	var input = fs.createReadStream('example.bmp');
+	input = deflate.createInflateStream(input);
+	
+	// pipe to output stream
+	var output = fs.createWriteStream('example.gz');
+	input.pipe(output);
 
 ### Low-level API
 
 If the `Stream` interface doesn't meet your needs, you can access the low-level API directly, via
 `Deflater` and `Inflater` classes. See the implementation of `DelateStream` and `InflateStream` to learn how to use
 the low-level API. All low-level functions are synchronous.
-	
+
 ## Options
 
 ### deflate(level=6)
