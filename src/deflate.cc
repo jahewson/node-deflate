@@ -299,78 +299,7 @@ class Inflater : ObjectWrap {
    int output_chunk_size;
    
   public:
-
-   Inflater() {
-      input = NULL;
-      output_length = 0;
-      output = NULL;
-      finished = false;
-   }
-
-   int Init(int windowBits, int chunk_size) {
-      strm.zalloc = Z_NULL;
-      strm.zfree = Z_NULL;
-      strm.opaque = Z_NULL;
-      strm.avail_in = 0;
-      strm.next_in = Z_NULL;
-      output_chunk_size = chunk_size;
-      return inflateInit2(&strm, windowBits);
-   }
-   
-   int SetInput(int in_length) {
-      strm.avail_in = in_length;
-      strm.next_in = (Bytef*) input;
-      
-      if (output == NULL || output_length == output_chunk_size) {
-         strm.avail_out = output_chunk_size;
-         output = (char*) malloc(output_chunk_size);
-         
-         if (output == NULL) {
-            return Z_MEM_ERROR;
-         }
-         
-         strm.next_out = (Bytef*) output;
-      }
-      
-      return Z_OK;
-   }
-   
-   void ResetOutput() {
-      strm.avail_out = output_chunk_size;
-      strm.next_out = (Bytef*) output;
-   }
-   
-   int Inflate() {
-      int ret = inflate(&strm, Z_NO_FLUSH);
-      status = ret;
-      output_length = output_chunk_size - strm.avail_out;
-
-      if (ret == Z_STREAM_END) {
-         inflateEnd(&strm);
-         finished = true;
-      }
-
-      return ret;
-   }
-   
-   bool IsOutputBufferFull() {
-      return output_length == output_chunk_size;
-   }
-   
-   bool HasFinished() {
-      return finished;
-   }
-   
-   int GetOutputLength() {
-      return output_length;
-   }
-   
-   char* GetOutput() {
-      return output;
-   }
-   
-   // node.js wrapper //
-       
+     
    static void Init(v8::Handle<v8::Object> target) {
       Local<FunctionTemplate> t = FunctionTemplate::New(New);
 
@@ -416,10 +345,21 @@ class Inflater : ObjectWrap {
          }
       }
       
-      Inflater *inflater = new Inflater();
-      inflater->Wrap(args.This());
+      Inflater *self = new Inflater();
+      self->Wrap(args.This());
 
-      int r = inflater->Init(windowBits, output_chunk_size);
+      self->input = NULL;
+      self->output_length = 0;
+      self->output = NULL;
+      self->finished = false;
+      
+      self->strm.zalloc = Z_NULL;
+      self->strm.zfree = Z_NULL;
+      self->strm.opaque = Z_NULL;
+      self->strm.avail_in = 0;
+      self->strm.next_in = Z_NULL;
+      self->output_chunk_size = output_chunk_size;
+      int r = inflateInit2(&(self->strm), windowBits);
       
       if (r < 0) {
          return GetZError(r);
@@ -429,66 +369,84 @@ class Inflater : ObjectWrap {
    }
    
    static Handle<Value> SetInput(const Arguments& args) {
-      Inflater *inflater = ObjectWrap::Unwrap<Inflater>(args.This());
+      Inflater *self = ObjectWrap::Unwrap<Inflater>(args.This());
       HandleScope scope;
       
       Local<Object> in = args[0]->ToObject();
       ssize_t length = Buffer::Length(in);
 
       // copy the input buffer, because it can be kept for several deflate() calls
-      inflater->input = (char*)realloc(inflater->input, length);
+      self->input = (char*)realloc(self->input, length);
       
-      if (inflater->input == NULL) {
+      if (self->input == NULL) {
           return GetZError(Z_MEM_ERROR);
       }
       
-      memcpy(inflater->input, Buffer::Data(in), length);
+      memcpy(self->input, Buffer::Data(in), length);
 
-      int r = inflater->SetInput(length);
+      self->strm.avail_in = length;
+      self->strm.next_in = (Bytef*) self->input;
       
-      if (r < 0) {
-         return GetZError(r);
+      if (self->output == NULL || self->output_length == self->output_chunk_size) {
+         self->strm.avail_out = self->output_chunk_size;
+         self->output = (char*) malloc(self->output_chunk_size);
+         
+         if (self->output == NULL) {
+            return GetZError(Z_MEM_ERROR);
+         }
+         
+         self->strm.next_out = (Bytef*) self->output;
       }
       
       return scope.Close(Undefined());
    }
    
    static Handle<Value> Inflate(const Arguments& args) {
-      Inflater *inflater = ObjectWrap::Unwrap<Inflater>(args.This());
+      Inflater *self = ObjectWrap::Unwrap<Inflater>(args.This());
       HandleScope scope;
 
-      if (inflater->HasFinished()) {
+      if (self->finished) {
          return scope.Close(False());
       }
 
-      int r = inflater->Inflate();
+      int r = inflate(&(self->strm), Z_NO_FLUSH);
+      self->status = r;
+      self->output_length = self->output_chunk_size - self->strm.avail_out;
+
+      if (r == Z_STREAM_END) {
+         inflateEnd(&(self->strm));
+         self->finished = true;
+      }
       
       if (r < 0) {
          return GetZError(r);
       }
       
-      if (inflater->HasFinished()) {
+      if (self->finished) {
          return scope.Close(True());
       }
       else {
-         return scope.Close(Boolean::New(inflater->IsOutputBufferFull()));
+         return scope.Close(Boolean::New(self->output_length == self->output_chunk_size));
       }
    }
    
    static Handle<Value> GetOutput(const Arguments& args) {
-      Inflater *inflater = ObjectWrap::Unwrap<Inflater>(args.This());
+      Inflater *self = ObjectWrap::Unwrap<Inflater>(args.This());
       HandleScope scope;
       
-      Buffer* slowBuffer = Buffer::New(inflater->GetOutput(), inflater->GetOutputLength());
-      inflater->ResetOutput();
+      Buffer* slowBuffer = Buffer::New(self->output, self->output_length);
       
-      if (inflater->HasFinished()) {
-         free(inflater->GetOutput());
+      // reset output
+      self->strm.avail_out = self->output_chunk_size;
+      self->strm.next_out = (Bytef*) self->output;
+      
+      if (self->finished) {
+         free(self->output);
       }
       
       Local<Object> globalObj = Context::GetCurrent()->Global();
       Local<Function> bufferConstructor = Local<Function>::Cast(globalObj->Get(String::New("Buffer")));
-      Handle<Value> constructorArgs[3] = { slowBuffer->handle_, Integer::New(inflater->GetOutputLength()), Integer::New(0) };
+      Handle<Value> constructorArgs[3] = { slowBuffer->handle_, Integer::New(self->output_length), Integer::New(0) };
       Local<Object> jsBuffer = bufferConstructor->NewInstance(3, constructorArgs);
       
       return scope.Close(jsBuffer);
