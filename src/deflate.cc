@@ -61,7 +61,7 @@ static Handle<Value> GetZError(int ret) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class Deflater : ObjectWrap {
+class Flater : ObjectWrap {
 
   private:
    z_stream strm;
@@ -71,6 +71,7 @@ class Deflater : ObjectWrap {
    int status;
    bool finished;
    int output_chunk_size;
+   bool isInflater;
    
   public:
        
@@ -78,14 +79,15 @@ class Deflater : ObjectWrap {
       Local<FunctionTemplate> t = FunctionTemplate::New(New);
 
       t->InstanceTemplate()->SetInternalFieldCount(1);
-      t->SetClassName(String::NewSymbol("Deflater"));
+      t->SetClassName(String::NewSymbol("Flater"));
 
       NODE_SET_PROTOTYPE_METHOD(t, "write", SetInput);
       NODE_SET_PROTOTYPE_METHOD(t, "deflate", Deflate);
       NODE_SET_PROTOTYPE_METHOD(t, "read", GetOutput);
-      NODE_SET_PROTOTYPE_METHOD(t, "flush", Finish);
+      NODE_SET_PROTOTYPE_METHOD(t, "deflateFlush", Finish);
+      NODE_SET_PROTOTYPE_METHOD(t, "inflate", Inflate);
       
-      target->Set(String::NewSymbol("Deflater"), t->GetFunction());
+      target->Set(String::NewSymbol("Flater"), t->GetFunction());
    }
     
    static Handle<Value> New (const Arguments& args) {
@@ -96,8 +98,16 @@ class Deflater : ObjectWrap {
       int memLevel = 8;
       int strategy = Z_DEFAULT_STRATEGY;
       int output_chunk_size = 131072; // 128K
+      bool isInflater = false;
       
-      int idx = 0;
+      int idx = 1;
+      
+      if (args.Length() == 0) {
+         Local<Value> exception = Exception::Error(String::New("first argument must be a boolean: deflate=false, inflate=true"));
+         return ThrowException(exception);
+      }
+
+      isInflater = args[0]->BooleanValue();
 
       if (args.Length() > 0) {
          if(args[idx+0]->IsNumber()) {
@@ -164,8 +174,10 @@ class Deflater : ObjectWrap {
          }
       }
       
-      Deflater *self = new Deflater();
+      Flater *self = new Flater();
       self->Wrap(args.This());
+
+      self->isInflater = isInflater;
 
       self->input = NULL;
       self->output_length = 0;
@@ -175,9 +187,19 @@ class Deflater : ObjectWrap {
       self->strm.zalloc = Z_NULL;
       self->strm.zfree = Z_NULL;
       self->strm.opaque = Z_NULL;
+      self->strm.avail_in = 0;
+      self->strm.next_in = Z_NULL;
       self->output_chunk_size = output_chunk_size;
-      int r = deflateInit2(&(self->strm), level, Z_DEFLATED, windowBits, memLevel, strategy);
       
+      int r;
+      if (self->isInflater) {
+         r = inflateInit2(&(self->strm), windowBits);
+      }
+      else
+      {
+         r = deflateInit2(&(self->strm), level, Z_DEFLATED, windowBits, memLevel, strategy);
+      }
+
       if (r < 0) {
          return GetZError(r);
       }
@@ -186,7 +208,7 @@ class Deflater : ObjectWrap {
    }
    
    static Handle<Value> SetInput(const Arguments& args) {
-      Deflater *self = ObjectWrap::Unwrap<Deflater>(args.This());
+      Flater *self = ObjectWrap::Unwrap<Flater>(args.This());
       HandleScope scope;
       
       Local<Object> in = args[0]->ToObject();
@@ -219,8 +241,12 @@ class Deflater : ObjectWrap {
    }
    
    static Handle<Value> Deflate(const Arguments& args) {
-      Deflater *self = ObjectWrap::Unwrap<Deflater>(args.This());
+      Flater *self = ObjectWrap::Unwrap<Flater>(args.This());
       HandleScope scope;
+      
+      if (self->isInflater) {
+         return ThrowException(Exception::Error(String::New("invalid when inflate = true")));
+      }
 
       int r = deflate(&(self->strm), Z_NO_FLUSH);
       self->status = r;
@@ -235,8 +261,12 @@ class Deflater : ObjectWrap {
    }
    
    static Handle<Value> Finish(const Arguments& args) {
-      Deflater *self = ObjectWrap::Unwrap<Deflater>(args.This());
+      Flater *self = ObjectWrap::Unwrap<Flater>(args.This());
       HandleScope scope;
+      
+      if (self->isInflater) {
+         return ThrowException(Exception::Error(String::New("invalid when inflate = true")));
+      }
       
       if (self->finished) {
          return scope.Close(False());
@@ -262,149 +292,14 @@ class Deflater : ObjectWrap {
       return scope.Close(True());
    }
    
-   static Handle<Value> GetOutput(const Arguments& args) {
-      Deflater *self = ObjectWrap::Unwrap<Deflater>(args.This());
-      HandleScope scope;
-      
-      Buffer* slowBuffer = Buffer::New(self->output, self->output_length);
-      
-      // reset output
-      self->strm.avail_out = self->output_chunk_size;
-      self->strm.next_out = (Bytef*) self->output;
-      
-      if (self->finished) {
-         free(self->output);
-      }
-      
-      Local<Object> globalObj = Context::GetCurrent()->Global();
-      Local<Function> bufferConstructor = Local<Function>::Cast(globalObj->Get(String::New("Buffer")));
-      Handle<Value> constructorArgs[3] = { slowBuffer->handle_, Integer::New(self->output_length), Integer::New(0) };
-      Local<Object> jsBuffer = bufferConstructor->NewInstance(3, constructorArgs);
-      
-      return scope.Close(jsBuffer);
-   }
-};
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-class Inflater : ObjectWrap {
-
-  private:
-   z_stream strm;
-   char* input;
-   char* output;
-   int output_length;
-   int status;
-   bool finished;
-   int output_chunk_size;
-   
-  public:
-     
-   static void Init(v8::Handle<v8::Object> target) {
-      Local<FunctionTemplate> t = FunctionTemplate::New(New);
-
-      t->InstanceTemplate()->SetInternalFieldCount(1);
-      t->SetClassName(String::NewSymbol("Inflater"));
-
-      NODE_SET_PROTOTYPE_METHOD(t, "write", SetInput);
-      NODE_SET_PROTOTYPE_METHOD(t, "inflate", Inflate);
-      NODE_SET_PROTOTYPE_METHOD(t, "read", GetOutput);
-      
-      target->Set(String::NewSymbol("Inflater"), t->GetFunction());
-   }
-    
-   static Handle<Value> New (const Arguments& args) {
-      HandleScope scope;
-      
-      int windowBits = 16 + MAX_WBITS; // gzip
-      int output_chunk_size = 65545; // <--- TODO: should have optional output buffer size
-      
-      if (args.Length() > 0) {
-         if (args[0]->IsString()) {
-            char* strLevel = *String::AsciiValue(args[0]->ToString());
-
-            if (strcmp(strLevel, "gzip") == 0) {
-               windowBits = 16 + MAX_WBITS;
-            }
-            else if (strcmp(strLevel, "zlib") == 0) {
-               windowBits = MAX_WBITS;
-            }
-            else if (strcmp(strLevel, "deflate") == 0) {
-               windowBits = -MAX_WBITS;
-            }
-            else {
-               Local<Value> exception = Exception::TypeError(String::New("bad deflate kind"));
-               return ThrowException(exception);
-            }
-         }
-         else if (args[0]->IsUndefined()) {
-         }
-         else {
-            Local<Value> exception = Exception::TypeError(String::New("expected a Number or String"));
-            return ThrowException(exception);
-         }
-      }
-      
-      Inflater *self = new Inflater();
-      self->Wrap(args.This());
-
-      self->input = NULL;
-      self->output_length = 0;
-      self->output = NULL;
-      self->finished = false;
-      
-      self->strm.zalloc = Z_NULL;
-      self->strm.zfree = Z_NULL;
-      self->strm.opaque = Z_NULL;
-      self->strm.avail_in = 0;
-      self->strm.next_in = Z_NULL;
-      self->output_chunk_size = output_chunk_size;
-      int r = inflateInit2(&(self->strm), windowBits);
-      
-      if (r < 0) {
-         return GetZError(r);
-      }
-      
-      return args.This();
-   }
-   
-   static Handle<Value> SetInput(const Arguments& args) {
-      Inflater *self = ObjectWrap::Unwrap<Inflater>(args.This());
-      HandleScope scope;
-      
-      Local<Object> in = args[0]->ToObject();
-      ssize_t length = Buffer::Length(in);
-
-      // copy the input buffer, because it can be kept for several deflate() calls
-      self->input = (char*)realloc(self->input, length);
-      
-      if (self->input == NULL) {
-          return GetZError(Z_MEM_ERROR);
-      }
-      
-      memcpy(self->input, Buffer::Data(in), length);
-
-      self->strm.avail_in = length;
-      self->strm.next_in = (Bytef*) self->input;
-      
-      if (self->output == NULL || self->output_length == self->output_chunk_size) {
-         self->strm.avail_out = self->output_chunk_size;
-         self->output = (char*) malloc(self->output_chunk_size);
-         
-         if (self->output == NULL) {
-            return GetZError(Z_MEM_ERROR);
-         }
-         
-         self->strm.next_out = (Bytef*) self->output;
-      }
-      
-      return scope.Close(Undefined());
-   }
-   
    static Handle<Value> Inflate(const Arguments& args) {
-      Inflater *self = ObjectWrap::Unwrap<Inflater>(args.This());
+      Flater *self = ObjectWrap::Unwrap<Flater>(args.This());
       HandleScope scope;
 
+      if (!self->isInflater) {
+         return ThrowException(Exception::Error(String::New("invalid when inflate = false")));
+      }
+      
       if (self->finished) {
          return scope.Close(False());
       }
@@ -417,11 +312,11 @@ class Inflater : ObjectWrap {
          inflateEnd(&(self->strm));
          self->finished = true;
       }
-      
+
       if (r < 0) {
          return GetZError(r);
       }
-      
+
       if (self->finished) {
          return scope.Close(True());
       }
@@ -431,7 +326,7 @@ class Inflater : ObjectWrap {
    }
    
    static Handle<Value> GetOutput(const Arguments& args) {
-      Inflater *self = ObjectWrap::Unwrap<Inflater>(args.This());
+      Flater *self = ObjectWrap::Unwrap<Flater>(args.This());
       HandleScope scope;
       
       Buffer* slowBuffer = Buffer::New(self->output, self->output_length);
@@ -685,8 +580,7 @@ static Handle<Value> OnePassInflate(const Arguments& args) {
 extern "C" {
    void init (Handle<Object> target) 
    {
-     Deflater::Init(target);
-     Inflater::Init(target);
+     Flater::Init(target);
      
      NODE_SET_METHOD(target, "version", GetVersion);
      NODE_SET_METHOD(target, "deflate", OnePassDeflate);
