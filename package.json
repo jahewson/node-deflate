@@ -3,7 +3,7 @@
   "description": "super-simple streaming gzip, wrapping native zlib (deflate/inflate)",
 	"homepage" : "https://github.com/jahewson/node-deflate",
 	"bugs" : { "web" : "https://github.com/jahewson/node-deflate/issues" },
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "John Hewson",
   "repository": {
     "type": "git",

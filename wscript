@@ -6,7 +6,7 @@ from shutil import copy2 as copy
 TARGET = 'deflate-bindings'
 TARGET_FILE = '%s.node' % TARGET
 built = 'build/default/%s' % TARGET_FILE
-dest = 'lib/deflate/%s' % TARGET_FILE
+dest = 'lib/%s' % TARGET_FILE
 
 def set_options(opt):
   opt.tool_options("compiler_cxx")
