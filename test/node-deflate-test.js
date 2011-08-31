@@ -8,7 +8,7 @@ function testOnePassDeflate(format, extension, test) {
   var inPath = path.join(__dirname, 'andromeda.bmp');
   var outPath = path.join(__dirname, 'temp.' + extension);
   
-  fs.writeFileSync(outPath, deflate.deflate(fs.readFileSync(inPath), format));      // <-- todo: just use buffer!
+  fs.writeFileSync(outPath, deflate.deflate(fs.readFileSync(inPath), format));
   
   validateDeflate(test, extension);
   test.done();
@@ -18,7 +18,7 @@ function testStreamingDeflate(format, extension, test) {
   test.expect(1);
 
   var input = fs.createReadStream(path.join(__dirname, 'andromeda.bmp'));
-  var output = fs.createWriteStream(path.join(__dirname, 'temp.' + extension)); // <-- TODO: write to MemoryStream ???
+  var output = fs.createWriteStream(path.join(__dirname, 'temp.' + extension));
   
   var ds = deflate.createDeflateStream(input, format);
   ds.pipe(output);
@@ -31,7 +31,7 @@ function testStreamingDeflate(format, extension, test) {
 
 function validateDeflate(test, extension, inflate) {
   var correct = fs.readFileSync(path.join(__dirname, 'andromeda.bmp.' + extension));
-  var deflated = fs.readFileSync(path.join(__dirname, 'temp.' + extension));    // <-- TODO!
+  var deflated = fs.readFileSync(path.join(__dirname, 'temp.' + extension));
 
   var failed = false;
 
@@ -54,7 +54,7 @@ function testOnePassInflate(format, extension, test) {
   var inPath = path.join(__dirname, 'andromeda.bmp.' + extension);
   var outPath = path.join(__dirname, 'temp_' + extension + '.bmp');
   
-  fs.writeFileSync(outPath, deflate.inflate(fs.readFileSync(inPath), format));      // <-- todo: just use buffer!
+  fs.writeFileSync(outPath, deflate.inflate(fs.readFileSync(inPath), format));
   
   validateInflate(test, extension);
   test.done();
@@ -65,7 +65,7 @@ function testStreamingInflate(format, extension, test) {
   test.expect(1);
   
   var input = fs.createReadStream(path.join(__dirname, 'andromeda.bmp.' + extension));
-  var output = fs.createWriteStream(path.join(__dirname, 'temp_' + extension + '.bmp')); // <-- TODO: write to MemoryStream ???
+  var output = fs.createWriteStream(path.join(__dirname, 'temp_' + extension + '.bmp'));
   
   var ds = deflate.createInflateStream(input, format);
   ds.pipe(output);
@@ -78,7 +78,7 @@ function testStreamingInflate(format, extension, test) {
 
 function validateInflate(test, extension, inflate) {
   var correct = fs.readFileSync(path.join(__dirname, 'andromeda.bmp'));
-  var inflated = fs.readFileSync(path.join(__dirname, 'temp_' + extension + '.bmp'));    // <-- TODO!
+  var inflated = fs.readFileSync(path.join(__dirname, 'temp_' + extension + '.bmp'));
 
   var failed = false;
 
