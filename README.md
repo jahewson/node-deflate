@@ -58,7 +58,7 @@ Any `ReadableStream` can be wrapped with an `InflateStream`, which we can `pipe`
 ### Low-level API
 
 If the `Stream` interface doesn't meet your needs, you can access the low-level API directly, via
-`Deflater` and `Inflater` classes. See the implementation of `DelateStream` and `InflateStream` to learn how to use
+the `Flater` class. See the implementation of `DelateStream` and `InflateStream` to learn how to use
 the low-level API. All low-level functions are synchronous.
 
 ## Options
