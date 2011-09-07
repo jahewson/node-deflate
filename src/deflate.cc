@@ -22,8 +22,7 @@
 #include <node_buffer.h>
 #include <zlib.h>
 #include <string.h>
-
-#include <stdio.h>
+#include <stdlib.h>
 
 using namespace v8;
 using namespace node;
