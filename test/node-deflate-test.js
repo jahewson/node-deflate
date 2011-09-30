@@ -4,9 +4,13 @@ var deflate = require('../lib/deflate'),
 
 function testOnePassDeflate(format, extension, test) {
   test.expect(1);
-  
+
   var inPath = path.join(__dirname, 'andromeda.bmp');
   var outPath = path.join(__dirname, 'temp.' + extension);
+  
+  if (path.exists(outPath)) {
+    fs.unlinkSync(outPath);
+  }
   
   fs.writeFileSync(outPath, deflate.deflate(fs.readFileSync(inPath), format));
   
@@ -18,7 +22,13 @@ function testStreamingDeflate(format, extension, test) {
   test.expect(1);
 
   var input = fs.createReadStream(path.join(__dirname, 'andromeda.bmp'));
-  var output = fs.createWriteStream(path.join(__dirname, 'temp.' + extension));
+  var outPath = path.join(__dirname, 'temp.' + extension);
+  
+  if (path.exists(outPath)) {
+    fs.unlinkSync(outPath);
+  }
+  
+  var output = fs.createWriteStream(outPath);
   
   var ds = deflate.createDeflateStream(input, format);
   ds.pipe(output);
@@ -54,6 +64,10 @@ function testOnePassInflate(format, extension, test) {
   var inPath = path.join(__dirname, 'andromeda.bmp.' + extension);
   var outPath = path.join(__dirname, 'temp_' + extension + '.bmp');
   
+  if (path.exists(outPath)) {
+    fs.unlinkSync(outPath);
+  }
+  
   fs.writeFileSync(outPath, deflate.inflate(fs.readFileSync(inPath), format));
   
   validateInflate(test, extension);
@@ -65,7 +79,14 @@ function testStreamingInflate(format, extension, test) {
   test.expect(1);
   
   var input = fs.createReadStream(path.join(__dirname, 'andromeda.bmp.' + extension));
-  var output = fs.createWriteStream(path.join(__dirname, 'temp_' + extension + '.bmp'));
+  
+  var outPath = path.join(__dirname, 'temp_' + extension + '.bmp');
+  
+  if (path.exists(outPath)) {
+    fs.unlinkSync(outPath);
+  }
+  
+  var output = fs.createWriteStream(outPath);
   
   var ds = deflate.createInflateStream(input, format);
   ds.pipe(output);
