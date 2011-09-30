@@ -23,17 +23,17 @@ You'll need to start with:
 
     var deflate = require('deflate');
 
-### Buffer (Quick and Dirty)
+### Buffer (Synchronous)
 
 Synchronously deflate a `Buffer` which contains all data to be compressed:
 
-	var gzip = deflate.deflate(fs.ReadFileSync('example.txt'));
+	var gzip = deflate.deflateSync(fs.ReadFileSync('example.txt'));
 	
 Synchronously inflate a `Buffer` which contains all compressed data:
 
-	var data = deflate.inflate(fs.ReadFileSync('example.gz'));
+	var data = deflate.inflateSync(fs.ReadFileSync('example.gz'));
 
-### Stream (Awesome)
+### Stream (Asynchronous)
 
 Any `ReadableStream` can be wrapped with a `DeflateStream`, which we can `pipe` into a `WritableStream`.
 
@@ -63,11 +63,11 @@ the low-level API. All low-level functions are synchronous.
 
 ## Options
 
-### deflate(level=6)
+### deflate(buffer, level=6)
 Deflates a gzip formatted `Buffer`. `level` sets the compression level from `0` (uncompressed) to `9` (highly compressed), 
 a smaller number is faster.
 
-### deflate(format='gzip', level=6)
+### deflate(buffer, format='gzip', level=6)
 Deflates a buffer.
 
 `format` can be `gzip`, `zlib`, or `deflate`.

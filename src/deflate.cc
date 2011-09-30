@@ -414,6 +414,15 @@ static Handle<Value> OnePassDeflate(const Arguments& args) {
          }
       }
    }
+   else {
+      Local<Value> exception = Exception::TypeError(String::New("invalid arguments"));
+      return ThrowException(exception);
+   }
+   
+   if (!Buffer::HasInstance(args[0])) {
+      Local<Value> exception = Exception::TypeError(String::New("expected Buffer"));
+      return ThrowException(exception);
+   }
    
    Local<Object> inBuff = args[0]->ToObject();
    char* in = Buffer::Data(inBuff);
@@ -497,6 +506,15 @@ static Handle<Value> OnePassInflate(const Arguments& args) {
          Local<Value> exception = Exception::TypeError(String::New("expected a String"));
          return ThrowException(exception);
       }
+   }
+   else {
+      Local<Value> exception = Exception::TypeError(String::New("invalid arguments"));
+      return ThrowException(exception);
+   }
+   
+   if (!Buffer::HasInstance(args[0])) {
+      Local<Value> exception = Exception::TypeError(String::New("expected Buffer"));
+      return ThrowException(exception);
    }
    
    Local<Object> inBuff = args[0]->ToObject();
@@ -582,6 +600,9 @@ extern "C" {
      Flater::Init(target);
      
      NODE_SET_METHOD(target, "version", GetVersion);
+     NODE_SET_METHOD(target, "deflateSync", OnePassDeflate);
+     NODE_SET_METHOD(target, "inflateSync", OnePassInflate);
+     // deprecated:
      NODE_SET_METHOD(target, "deflate", OnePassDeflate);
      NODE_SET_METHOD(target, "inflate", OnePassInflate);
    }

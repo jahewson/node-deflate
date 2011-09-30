@@ -12,7 +12,7 @@ function testOnePassDeflate(format, extension, test) {
     fs.unlinkSync(outPath);
   }
   
-  fs.writeFileSync(outPath, deflate.deflate(fs.readFileSync(inPath), format));
+  fs.writeFileSync(outPath, deflate.deflateSync(fs.readFileSync(inPath), format));
   
   validateDeflate(test, extension);
   test.done();
@@ -68,7 +68,7 @@ function testOnePassInflate(format, extension, test) {
     fs.unlinkSync(outPath);
   }
   
-  fs.writeFileSync(outPath, deflate.inflate(fs.readFileSync(inPath), format));
+  fs.writeFileSync(outPath, deflate.inflateSync(fs.readFileSync(inPath), format));
   
   validateInflate(test, extension);
   test.done();
