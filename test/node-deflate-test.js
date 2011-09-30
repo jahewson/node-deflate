@@ -8,7 +8,7 @@ function testOnePassDeflate(format, extension, test) {
   var inPath = path.join(__dirname, 'andromeda.bmp');
   var outPath = path.join(__dirname, 'temp.' + extension);
   
-  if (path.exists(outPath)) {
+  if (path.existsSync(outPath)) {
     fs.unlinkSync(outPath);
   }
   
@@ -24,7 +24,7 @@ function testStreamingDeflate(format, extension, test) {
   var input = fs.createReadStream(path.join(__dirname, 'andromeda.bmp'));
   var outPath = path.join(__dirname, 'temp.' + extension);
   
-  if (path.exists(outPath)) {
+  if (path.existsSync(outPath)) {
     fs.unlinkSync(outPath);
   }
   
@@ -64,7 +64,7 @@ function testOnePassInflate(format, extension, test) {
   var inPath = path.join(__dirname, 'andromeda.bmp.' + extension);
   var outPath = path.join(__dirname, 'temp_' + extension + '.bmp');
   
-  if (path.exists(outPath)) {
+  if (path.existsSync(outPath)) {
     fs.unlinkSync(outPath);
   }
   
@@ -82,7 +82,7 @@ function testStreamingInflate(format, extension, test) {
   
   var outPath = path.join(__dirname, 'temp_' + extension + '.bmp');
   
-  if (path.exists(outPath)) {
+  if (path.existsSync(outPath)) {
     fs.unlinkSync(outPath);
   }
   
