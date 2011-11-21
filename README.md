@@ -1,9 +1,9 @@
+# *DEPRECATED* - node.js v0.6 has a built-in [ZLIB API](http://nodejs.org/docs/v0.6.2/api/zlib.html)
+
 # deflate -- gzip, zlib, and deflate for node.js
 Streaming [DEFLATE](http://tools.ietf.org/html/rfc1951) (RFC 1951), [ZLIB](http://tools.ietf.org/html/rfc1950)
 (RFC 1950) and [GZIP](http://tools.ietf.org/html/rfc1952) (RFC 1952) compression and expansion for
 [node.js](http://nodejs.org/).
-
-![zlib](http://i56.tinypic.com/i5ynol.png) 
 
 uses native [zlib](http://zlib.net).
 
