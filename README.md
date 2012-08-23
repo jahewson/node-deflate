@@ -1,3 +1,4 @@
+[![build status](https://secure.travis-ci.org/jahewson/node-deflate.png)](http://travis-ci.org/jahewson/node-deflate)
 # *DEPRECATED* - node.js v0.6 has a built-in [ZLIB API](http://nodejs.org/docs/v0.6.2/api/zlib.html)
 
 # deflate -- gzip, zlib, and deflate for node.js
